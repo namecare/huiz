@@ -1,0 +1,4 @@
+[bindings.swift]
+module_name = "Huiz"
+cdylib_name = "huiz_ffi"
+omit_argument_labels = true

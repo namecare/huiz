@@ -1,0 +1,8 @@
+namespace huiz {
+    Whois query(string q);
+};
+
+dictionary Whois {
+    string raw;
+};
+
