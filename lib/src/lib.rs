@@ -42,12 +42,31 @@ pub fn whois(q: &str) -> Result<WhoisResult, Error> {
 }
 
 fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, Error> {
-    let stream = open_conn(host, port)?;
-    let prepared_query = prepare_query(query, flags, host);
-    let whois = do_query(&stream, &prepared_query, flags)?;
+    let mut nhost = host.to_string();
+    let mut nport = port.to_string();
+
+    let mut chain: Vec<Whois> = vec![];
+
+    loop {
+        let stream = open_conn(&nhost, &nport)?;
+        let prepared_query = prepare_query(query, flags, &nhost);
+        let whois = do_query(&stream, &prepared_query, flags)?;
+        chain.push(whois.clone());
+
+        let Some(next_host) = whois.referral else {
+            break
+        };
+
+        if next_host.as_str() == nhost {
+            break;
+        }
+
+        nport = whois.referral_port.unwrap_or(nport);
+        nhost = next_host;
+    }
 
     let r = WhoisResult {
-        chain: vec![whois]
+        chain
     };
 
     Ok(r)
@@ -242,7 +261,6 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn whois_test() {
