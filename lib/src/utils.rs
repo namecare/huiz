@@ -127,6 +127,6 @@ pub fn normalize_domain(domain: &str) -> Result<String, Error> {
 
     domain_to_ascii(trimmed_domain).map(|puny| {
         puny
-    }).map_err(|e| Error::InvalidDomain)
+    }).map_err(|_e| Error::InvalidDomain)
 }
 

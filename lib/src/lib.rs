@@ -4,12 +4,13 @@ pub mod utils;
 pub mod error;
 
 use std::net::{TcpStream, ToSocketAddrs};
-use std::io::{BufRead, BufReader, BufWriter, Error, Write};
-use std::process::abort;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+
 use std::time::Duration;
 use std::str::from_utf8;
-use idna::domain_to_ascii;
-use crate::data::{ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, IANAHOST, QNICHOST_TAIL, RNICHOST, VNICHOST, WHOIS_REFERRAL, WHOIS_WHERE};
+
+use crate::data::{ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, IANAHOST, QNICHOST_TAIL, VNICHOST, WHOIS_REFERRAL, WHOIS_WHERE};
+use crate::error::Error;
 
 use crate::strings_to_hide::HIDE_STRINGS;
 use crate::utils::is_host_char;
@@ -34,13 +35,13 @@ pub struct Whois {
     pub raw: String
 }
 
-pub fn whois(q: &str) -> Result<WhoisResult, Box<dyn std::error::Error>> {
+pub fn whois(q: &str) -> Result<WhoisResult, Error> {
     let host = choose_server(q);
     let port = DEFAULT_PORT;
     query(q, host, port, WHOIS_RECURSE | WHOIS_SPAM_ME)
 }
 
-fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, Box<dyn std::error::Error>> {
+fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, Error> {
     let stream = open_conn(host, port)?;
     let prepared_query = prepare_query(query, flags, host);
     let whois = do_query(&stream, &prepared_query, flags)?;
@@ -52,7 +53,7 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
     Ok(r)
 }
 
-fn do_query(mut stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> {
+fn do_query(stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> {
     let mut reader = BufReader::new(stream);
     let mut writer = BufWriter::new(stream);
 
@@ -109,7 +110,7 @@ fn do_query(mut stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Err
             }
             Err(err) => {
                 println!("{:?}", err);
-                return Err(err)
+                return Err(Error::TcpStreamError(err))
             }
         }
     }
@@ -190,10 +191,7 @@ fn open_conn(server: &str, port: &str) -> Result<TcpStream, Error> {
 
     match stream {
         Some(s) => Ok(s),
-        None => Err(Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to connect to {}", server),
-        )),
+        None => Err(Error::NoConnection),
     }
 }
 
@@ -244,7 +242,7 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::utils::*;
+    
 
     #[test]
     fn whois_test() {
