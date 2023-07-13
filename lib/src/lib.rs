@@ -1,5 +1,4 @@
 pub mod strings_to_hide;
-pub mod legacy;
 pub mod data;
 pub mod utils;
 pub mod error;
@@ -83,7 +82,6 @@ fn do_query(mut stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Err
                         if let Some(pos) = line.find(referral.prefix) {
                             let mut p = line[pos + referral.len..].trim_start().chars();
                             let host = p.by_ref().take_while(|c| is_host_char(*c)).collect::<String>();
-
                             if !host.is_empty() {
                                 if p.next() == Some(':') {
                                     let pstr = p.as_str();
