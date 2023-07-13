@@ -129,3 +129,4 @@ pub fn normalize_domain(domain: &str) -> Result<String, Error> {
         puny
     }).map_err(|e| Error::InvalidDomain)
 }
+
