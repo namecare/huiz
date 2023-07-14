@@ -8,10 +8,9 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::time::Duration;
 use std::str::from_utf8;
 
-use crate::data::{ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, IANAHOST, QNICHOST_TAIL, VNICHOST, WHOIS_REFERRAL, WHOIS_WHERE};
+use crate::data::{ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, IANAHOST, QNICHOST_TAIL, VNICHOST, WHOIS_REFERRAL, WHOIS_WHERE, HIDE_STRINGS};
 use crate::error::Error;
 
-use crate::strings_to_hide::HIDE_STRINGS;
 use crate::utils::is_host_char;
 
 const HIDE_NOT_STARTED: i32 = -1;
@@ -72,75 +71,59 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
 }
 
 fn do_query(stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> {
-    let mut reader = BufReader::new(stream);
-    let mut writer = BufWriter::new(stream);
-
-    let mut nhost: Option<String> = None;
-    let mut nport: Option<String> = None;
+    let mut referral: Option<(String, String)> = None;
 
     let should_spam_me = flags & WHOIS_SPAM_ME != 0;
-
-    writer.write_all(query.as_bytes())?;
-    writer.flush()?;
-
     let mut hide_state = HIDE_NOT_STARTED;
 
     let mut buf = Vec::new();
+    let mut line_buf = Vec::new();
+
+    let mut reader = BufReader::new(stream);
+    let mut writer = BufWriter::new(stream);
+    writer.write_all(query.as_bytes())?;
+    writer.flush()?;
+
     loop {
-        match reader.read_until(b'\n', &mut buf) {
+        line_buf.clear();
+
+        match reader.read_until(b'\n', &mut line_buf) {
             Ok(0) => break,
             Ok(_) => {
-                let line = from_utf8(&buf).expect("Expect line");
+                let line = from_utf8(&line_buf).map_err(|e| Error::InternalError)?;
 
-                if !should_spam_me && hide_line(&mut hide_state, line) {
-                    print!("{}", line);
+                if should_spam_me || !hide_line(&mut hide_state, line) {
+                    buf.extend(&line_buf);
                 }
 
-                if nhost.is_none() {
-                    for referral in WHOIS_REFERRAL {
-                        if let Some(pos) = line.find(referral.prefix) {
-                            let mut p = line[pos + referral.len..].trim_start().chars();
-                            let host = p.by_ref().take_while(|c| is_host_char(*c)).collect::<String>();
-                            if !host.is_empty() {
-                                if p.next() == Some(':') {
-                                    let pstr = p.as_str();
-                                    let port = pstr.chars().take_while(|c| c.is_ascii_digit()).collect::<String>();
-                                    if !port.is_empty() {
-                                        nhost = Some(host);
-                                        nport = Some(port);
-                                        break;
-                                    }
-                                }
-                                nhost = Some(host);
-                                break;
-                            }
-                        }
-                    }
-
-                    for arin in &["netname:        ERX-NETBLOCK\n", "netname:        NON-RIPE-NCC-MANAGED-ADDRESS-BLOCK\n"] {
-                        if line == *arin {
-                            nhost = Some(ANICHOST.to_owned());
-                            nport = Some(DEFAULT_PORT.to_owned());
-                            break;
-                        }
-                    }
+                if referral.is_none() {
+                    referral = find_referral(line);
                 }
             }
             Err(err) => {
-                println!("{:?}", err);
                 return Err(Error::TcpStreamError(err))
             }
         }
     }
 
+    line_buf.clear();
+    drop(line_buf);
     drop(writer);
     drop(reader);
 
     let raw = from_utf8(&buf).expect("Expect raw");
 
+    let mut nhost: Option<String> = None;
+    let mut nport: Option<String> = None;
+
+    if let Some(r) = referral {
+        nhost = Some(r.0);
+        nport = Some(r.1);
+    }
+
     let whois = Whois {
-        referral: nhost,
-        referral_port: nport,
+        referral: nhost.clone(),
+        referral_port: nport.clone(),
         raw: raw.to_string(),
     };
 
@@ -241,7 +224,7 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
             let idx: usize = (*hide).try_into().expect("Expect usize");
 
             if hide_strings[idx + 1] == Some("") {
-                if line.is_empty() {
+                if line.is_empty() || line.contains(['\n', '\r', '\0']){
                     *hide = HIDE_NOT_STARTED;
                     return false
                 }
@@ -257,6 +240,45 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
     }
 }
 
+fn find_referral(line: &str) -> Option<(String, String)> {
+    let mut nhost: Option<String> = None;
+    let mut nport: Option<String> = None;
+
+    for referral in WHOIS_REFERRAL {
+        if let Some(pos) = line.find(referral.prefix) {
+            let mut p = line[pos + referral.len..].trim_start().chars();
+            let host = p.by_ref().take_while(|c| is_host_char(*c)).collect::<String>();
+            if !host.is_empty() {
+                if p.next() == Some(':') {
+                    let pstr = p.as_str();
+                    let port = pstr.chars().take_while(|c| c.is_ascii_digit()).collect::<String>();
+
+                    if !port.is_empty() {
+                        nhost = Some(host);
+                        nport = Some(port);
+                        break;
+                    }
+                }
+                nhost = Some(host);
+                break;
+            }
+        }
+    }
+
+    for arin in &["netname:        ERX-NETBLOCK\n", "netname:        NON-RIPE-NCC-MANAGED-ADDRESS-BLOCK\n"] {
+        if line == *arin {
+            nhost = Some(ANICHOST.to_owned());
+            nport = Some(DEFAULT_PORT.to_owned());
+            break;
+        }
+    }
+
+    let Some(r) = nhost else {
+        return None
+    };
+
+    return Some((r, nport.unwrap_or(DEFAULT_PORT.to_string())))
+}
 #[cfg(test)]
 mod tests {
     use super::*;
