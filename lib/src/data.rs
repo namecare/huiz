@@ -80,6 +80,7 @@ pub const HIDE_STRINGS: &[Option<&str>] = &[
     Some("Terms of Use: Donuts Inc. provides"), None,
     Some("Access to WHOIS information is provided"), None,
     Some("TERMS OF USE: You  are  not  authorized"), None,
+    Some("TERMS OF USE: You are not authorized"), None,
     Some("The Whois and RDAP services are provided by CentralNic"), Some(""),
     Some(".Club Domains, LLC, the Registry Operator"), None,
     Some("% Except for agreed Internet operational purposes"), None,
@@ -102,5 +103,6 @@ pub const HIDE_STRINGS: &[Option<&str>] = &[
     Some("For more information on Whois"), None,
     Some("If you have"), None,
     Some("The data in"), None,
+    Some("For more information on Whois status codes, please visit"), None,
     None, None
 ];

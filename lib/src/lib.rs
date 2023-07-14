@@ -181,7 +181,7 @@ fn open_conn(server: &str, port: &str) -> Result<TcpStream, Error> {
     let mut stream = None;
 
     for a in addrs {
-        match TcpStream::connect_timeout(&a, Duration::from_secs(60)) {
+        match TcpStream::connect_timeout(&a, Duration::from_secs(2)) {
             Ok(s) => {
                 stream = Some(s);
                 break;
@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn whois_test() {
-        let domain = "google.com";
+        let domain = "tikhop.com";
         let r = whois(domain);
         println!("{:?}", r)
     }
