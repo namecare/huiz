@@ -23,6 +23,7 @@ pub const WHOIS_SPAM_ME: u8 = 0x04;
 
 #[derive(Debug, Clone)]
 pub struct WhoisResult {
+    pub query: String,
     pub chain: Vec<Whois>
 }
 
@@ -64,6 +65,7 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
     }
 
     let r = WhoisResult {
+        query: query.to_string(),
         chain
     };
 
@@ -246,12 +248,18 @@ fn find_referral(line: &str) -> Option<(String, String)> {
 
     for referral in WHOIS_REFERRAL {
         if let Some(pos) = line.find(referral.prefix) {
-            let mut p = line[pos + referral.len..].trim_start().chars();
-            let host = p.by_ref().take_while(|c| is_host_char(*c)).collect::<String>();
+            let mut referall_value = line[(pos + referral.len)..]
+                .trim_start()
+                .chars();
+
+            let host = referall_value.by_ref()
+                .take_while(|c| is_host_char(*c))
+                .collect::<String>();
+
             if !host.is_empty() {
-                if p.next() == Some(':') {
-                    let pstr = p.as_str();
-                    let port = pstr.chars().take_while(|c| c.is_ascii_digit()).collect::<String>();
+                if referall_value.next() == Some(':') {
+                    let port = referall_value.take_while(|c| c.is_ascii_digit())
+                        .collect::<String>();
 
                     if !port.is_empty() {
                         nhost = Some(host);
@@ -279,6 +287,7 @@ fn find_referral(line: &str) -> Option<(String, String)> {
 
     return Some((r, nport.unwrap_or(DEFAULT_PORT.to_string())))
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

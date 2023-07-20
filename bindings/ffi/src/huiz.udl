@@ -12,6 +12,7 @@ namespace huiz {
 };
 
 dictionary WhoisResult {
+    string query;
     sequence<Whois> chain;
 };
 
