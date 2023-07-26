@@ -37,6 +37,7 @@ pub struct Whois {
 pub fn whois(q: &str) -> Result<WhoisResult, Error> {
     let host = choose_server(q);
     let port = DEFAULT_PORT;
+
     query(q, host, port, WHOIS_RECURSE | WHOIS_SPAM_ME)
 }
 
@@ -47,7 +48,25 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
     let mut chain: Vec<Whois> = vec![];
 
     loop {
-        let stream = open_conn(&nhost, &nport)?;
+        let stream = open_conn(&nhost, &nport);
+
+        // Return some part of the chain if connection failed
+        match stream {
+            Err(e) => {
+                if chain.is_empty() {
+                    return Err(e);
+                }else{
+                    let r = WhoisResult {
+                        query: query.to_string(),
+                        chain
+                    };
+                    return Ok(r);
+                }
+            }
+            _ => {}
+        }
+
+        let stream = stream.expect("Expect it here");
         let prepared_query = prepare_query(query, flags, &nhost);
         let whois = do_query(&stream, &prepared_query, flags)?;
         chain.push(whois.clone());
