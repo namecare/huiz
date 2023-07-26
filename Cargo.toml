@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    "bindings/ffi",
-    "bindings/uniffi-bindgen",
+    "bindings",
     "lib",
 ]
 

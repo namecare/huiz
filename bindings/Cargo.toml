@@ -1,0 +1,25 @@
+[package]
+authors = ["PT"]
+edition = "2021"
+homepage = "https://github.com/namecare/huiz"
+repository = "https://github.com/namecare/huiz"
+description = "Swift bindings for Huiz"
+license_file = "../../LICENSE"
+name = "huiz_ffi"
+version = "0.1.0"
+
+[lib]
+name = "huiz_ffi"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin.rs"
+
+[dependencies]
+uniffi = { version = "0.24.1", features = ["tokio", "cli"]}
+huiz = { path = "../lib/" }
+
+[build-dependencies]
+uniffi = { version = "0.24.1", features = [ "build"] }
+

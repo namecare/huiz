@@ -1,0 +1,27 @@
+//[Error]
+//enum HuizError {
+//  "InvalidDomain",
+//  "InternalError",
+//  "NoConnection",
+//  "TcpStreamError"
+//};
+//
+//namespace huiz {
+//    [Throws=HuizError]
+//    WhoisResult whois(string q);
+//
+//    Result<string, HuizError> azync();
+//};
+//
+dictionary WhoisResult {
+    string query;
+    sequence<Whois> chain;
+};
+
+dictionary Whois {
+    string? referral;
+    string? referral_port;
+    string raw;
+};
+
+namespace huiz_ffi {};
