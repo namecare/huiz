@@ -28,7 +28,7 @@
   </a>
 </div>
 
-Huiz is a lightweight Rust crate featuring WHOIS client that is inspired by [rfc1036/whois](https://github.com/rfc1036/whois) and [FreeBSD/whoid](https://github.com/apple-oss-distributions/adv_cmds/blob/320b8e327652c75d74e60adb9d085f4a81ac3d9d/whois/whois.c#L477).
+Huiz is a lightweight Rust crate featuring WHOIS client that is inspired by [rfc1036/whois](https://github.com/rfc1036/whois) and [FreeBSD/whois](https://github.com/apple-oss-distributions/adv_cmds/blob/320b8e327652c75d74e60adb9d085f4a81ac3d9d/whois/whois.c#L477).
 
 ## Install
 ```toml
