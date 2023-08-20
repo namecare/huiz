@@ -1,14 +1,17 @@
 pub mod data;
-pub mod utils;
 pub mod error;
+pub mod utils;
 
-use std::net::{TcpStream, ToSocketAddrs};
 use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 
-use std::time::Duration;
 use std::str::from_utf8;
+use std::time::Duration;
 
-use crate::data::{ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, IANAHOST, QNICHOST_TAIL, VNICHOST, WHOIS_REFERRAL, WHOIS_WHERE, HIDE_STRINGS};
+use crate::data::{
+    ANICHOST, DEFAULT_PORT, DENICHOST, DKNICHOST, HIDE_STRINGS, IANAHOST, QNICHOST_TAIL, VNICHOST,
+    WHOIS_REFERRAL, WHOIS_WHERE,
+};
 use crate::error::Error;
 
 use crate::utils::is_host_char;
@@ -24,14 +27,14 @@ pub const WHOIS_SPAM_ME: u8 = 0x04;
 #[derive(Debug, Clone)]
 pub struct WhoisResult {
     pub query: String,
-    pub chain: Vec<Whois>
+    pub chain: Vec<Whois>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Whois {
     pub referral: Option<String>,
     pub referral_port: Option<String>,
-    pub raw: String
+    pub raw: String,
 }
 
 pub fn whois(q: &str) -> Result<WhoisResult, Error> {
@@ -55,10 +58,10 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
             Err(e) => {
                 if chain.is_empty() {
                     return Err(e);
-                }else{
+                } else {
                     let r = WhoisResult {
                         query: query.to_string(),
-                        chain
+                        chain,
                     };
                     return Ok(r);
                 }
@@ -85,7 +88,7 @@ fn query(query: &str, host: &str, port: &str, flags: u8) -> Result<WhoisResult, 
 
     let r = WhoisResult {
         query: query.to_string(),
-        chain
+        chain,
     };
 
     Ok(r)
@@ -111,7 +114,7 @@ fn do_query(stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> 
         match reader.read_until(b'\n', &mut line_buf) {
             Ok(0) => break,
             Ok(_) => {
-                let line = from_utf8(&line_buf).map_err(|e| Error::InternalError)?;
+                let line = from_utf8(&line_buf).map_err(|_e| Error::InternalError)?;
 
                 if should_spam_me || !hide_line(&mut hide_state, line) {
                     buf.extend(&line_buf);
@@ -121,9 +124,7 @@ fn do_query(stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> 
                     referral = find_referral(line);
                 }
             }
-            Err(err) => {
-                return Err(Error::TcpStreamError(err))
-            }
+            Err(err) => return Err(Error::TcpStreamError(err)),
         }
     }
 
@@ -166,13 +167,17 @@ fn prepare_query(query: &str, flags: u8, hostname: &str) -> String {
     let should_spam_me = flags & WHOIS_SPAM_ME != 0;
     let mut builded_query: String;
 
-    if !should_spam_me && (hostname.eq_ignore_ascii_case(DENICHOST) ||
-        hostname.eq_ignore_ascii_case(format!("de{:?}", QNICHOST_TAIL).as_str())) {
+    if !should_spam_me
+        && (hostname.eq_ignore_ascii_case(DENICHOST)
+            || hostname.eq_ignore_ascii_case(format!("de{:?}", QNICHOST_TAIL).as_str()))
+    {
         let idn = query.chars().any(|c| !c.is_ascii());
         let dn_arg = if idn { "" } else { ",ace" };
         builded_query = format!("-T dn{} {}", dn_arg, query);
-    } else if !should_spam_me && (hostname.eq_ignore_ascii_case(DKNICHOST) ||
-        hostname.eq_ignore_ascii_case(format!("dk{:?}", QNICHOST_TAIL).as_str())) {
+    } else if !should_spam_me
+        && (hostname.eq_ignore_ascii_case(DKNICHOST)
+            || hostname.eq_ignore_ascii_case(format!("dk{:?}", QNICHOST_TAIL).as_str()))
+    {
         builded_query = format!("--show-handles {}", query);
     } else if should_spam_me || query.contains(' ') {
         builded_query = format!("{}", query);
@@ -184,8 +189,9 @@ fn prepare_query(query: &str, flags: u8, hostname: &str) -> String {
         }
     } else if hostname.eq_ignore_ascii_case(VNICHOST) {
         builded_query = format!("domain {}", query);
-    } else if hostname.eq_ignore_ascii_case("whois.nic.ad.jp") ||
-        hostname.eq_ignore_ascii_case("whois.nic.ad.jp") {
+    } else if hostname.eq_ignore_ascii_case("whois.nic.ad.jp")
+        || hostname.eq_ignore_ascii_case("whois.nic.ad.jp")
+    {
         builded_query = format!("{}/e", query)
     } else {
         builded_query = format!("{}", query)
@@ -233,7 +239,7 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
                         i.try_into().unwrap()
                     };
 
-                    return true
+                    return true;
                 }
 
                 i += 2;
@@ -245,19 +251,19 @@ fn hide_line(hide: &mut i32, line: &str) -> bool {
             let idx: usize = (*hide).try_into().expect("Expect usize");
 
             if hide_strings[idx + 1] == Some("") {
-                if line.is_empty() || line.contains(['\n', '\r', '\0']){
+                if line.is_empty() || line.contains(['\n', '\r', '\0']) {
                     *hide = HIDE_NOT_STARTED;
-                    return false
+                    return false;
                 }
             } else if let Some(hide_str) = hide_strings[idx + 1] {
                 if line.starts_with(hide_str) {
                     *hide = HIDE_NOT_STARTED;
-                    return true
+                    return true;
                 }
             }
-            return true
+            return true;
         }
-        _ => false
+        _ => false,
     }
 }
 
@@ -267,17 +273,17 @@ fn find_referral(line: &str) -> Option<(String, String)> {
 
     for referral in WHOIS_REFERRAL {
         if let Some(pos) = line.find(referral.prefix) {
-            let mut referall_value = line[(pos + referral.len)..]
-                .trim_start()
-                .chars();
+            let mut referall_value = line[(pos + referral.len)..].trim_start().chars();
 
-            let host = referall_value.by_ref()
+            let host = referall_value
+                .by_ref()
                 .take_while(|c| is_host_char(*c))
                 .collect::<String>();
 
             if !host.is_empty() {
                 if referall_value.next() == Some(':') {
-                    let port = referall_value.take_while(|c| c.is_ascii_digit())
+                    let port = referall_value
+                        .take_while(|c| c.is_ascii_digit())
                         .collect::<String>();
 
                     if !port.is_empty() {
@@ -292,7 +298,10 @@ fn find_referral(line: &str) -> Option<(String, String)> {
         }
     }
 
-    for arin in &["netname:        ERX-NETBLOCK\n", "netname:        NON-RIPE-NCC-MANAGED-ADDRESS-BLOCK\n"] {
+    for arin in &[
+        "netname:        ERX-NETBLOCK\n",
+        "netname:        NON-RIPE-NCC-MANAGED-ADDRESS-BLOCK\n",
+    ] {
         if line == *arin {
             nhost = Some(ANICHOST.to_owned());
             nport = Some(DEFAULT_PORT.to_owned());
@@ -304,7 +313,7 @@ fn find_referral(line: &str) -> Option<(String, String)> {
         return None
     };
 
-    return Some((r, nport.unwrap_or(DEFAULT_PORT.to_string())))
+    return Some((r, nport.unwrap_or(DEFAULT_PORT.to_string())));
 }
 
 #[cfg(test)]

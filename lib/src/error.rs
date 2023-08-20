@@ -1,5 +1,4 @@
-
-use thiserror::Error;
+use std::path::Display;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -16,10 +15,3 @@ pub enum Error {
     TcpStreamError(#[from] std::io::Error),
 }
 
-impl PartialEq for Error {
-    fn eq(&self, other: &Self) -> bool {
-        use std::error::Error;
-
-        self.description() == other.description()
-    }
-}

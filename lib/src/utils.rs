@@ -1,5 +1,5 @@
-use idna::domain_to_ascii;
 use crate::error::Error;
+use idna::domain_to_ascii;
 
 /// Checks if a character is a valid host character.
 ///
@@ -121,12 +121,10 @@ pub fn normalize_domain(domain: &str) -> Result<String, Error> {
     let invalid = trimmed_domain.contains(|c: char| !is_host_char(c));
 
     if invalid {
-        return Err(Error::InvalidDomain)
+        return Err(Error::InvalidDomain);
     }
 
-
-    domain_to_ascii(trimmed_domain).map(|puny| {
-        puny
-    }).map_err(|_e| Error::InvalidDomain)
+    domain_to_ascii(trimmed_domain)
+        .map(|puny| puny)
+        .map_err(|_e| Error::InvalidDomain)
 }
-
