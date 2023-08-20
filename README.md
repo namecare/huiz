@@ -6,6 +6,11 @@
 </div>
 
 <div align="center">
+  <!-- Github Actions -->
+  <a href="https://github.com/namecare/huiz/actions/workflows/rust.yml?query=branch%3Amaster">
+    <img src="https://img.shields.io/github/actions/workflow/status/launchbadge/huiz/rust.yml?branch=master&style=flat-square"
+      alt="actions status" />
+  </a>
   <!-- Version -->
   <a href="https://crates.io/crates/huiz">
     <img src="https://img.shields.io/crates/v/huiz.svg?style=flat-square"
