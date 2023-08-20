@@ -1,11 +1,18 @@
 [package]
 name = "huiz"
+description = "Huiz is a lightweight Rust crate featuring WHOIS client"
 version = "0.1.0"
+repository = "https://github.com/namecare/huiz"
+homepage = "https://github.com/namecare/huiz"
+authors = ["tkhp", "namecare"]
+license = "MIT"
+readme = "README.md"
+documentation = "https://docs.rs/huiz"
+keywords = ["whois"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-
 [dependencies]
 idna = "0.4.0"
-thiserror = "1.0.43"
+thiserror = "1.0.44"
