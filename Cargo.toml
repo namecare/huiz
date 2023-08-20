@@ -1,12 +1,6 @@
 [workspace]
 members = [
-    "bindings",
     "lib",
+    "bindings",
+    "examples/simple-query"
 ]
-
-[profile.release]
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = 'abort'
-debug = false

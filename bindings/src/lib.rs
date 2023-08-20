@@ -1,11 +1,9 @@
-use std::time::Duration;
-use huiz::error::Error;
 pub use huiz::Whois;
 use huiz::WhoisResult;
 
 #[derive(uniffi::Error, Debug)]
 pub enum HuizError {
-    Error
+    Error,
 }
 
 #[uniffi::export]
