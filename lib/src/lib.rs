@@ -106,6 +106,7 @@ fn do_query(stream: &TcpStream, query: &str, flags: u8) -> Result<Whois, Error> 
     let mut reader = BufReader::new(stream);
     let mut writer = BufWriter::new(stream);
     writer.write_all(query.as_bytes())?;
+    writer.write_all("\r\n".as_bytes())?;
     writer.flush()?;
 
     loop {
@@ -197,7 +198,6 @@ fn prepare_query(query: &str, flags: u8, hostname: &str) -> String {
         builded_query = format!("{}", query)
     };
 
-    builded_query.push_str("\n");
     builded_query
 }
 
@@ -322,7 +322,7 @@ mod tests {
 
     #[test]
     fn whois_test() {
-        let domain = "tikhop.com";
+        let domain = "l337.site";
         let r = whois(domain);
         println!("{:?}", r)
     }
