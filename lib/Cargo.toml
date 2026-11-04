@@ -14,5 +14,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-idna = "0.4.0"
-thiserror = "1.0.44"
+idna = "1.1.0"
+thiserror = "2.0.21"
